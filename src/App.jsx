@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dayjs from "dayjs";
 import { Calendar, Hourglass, RefreshCcw, Play } from "lucide-react";
+import { Analytics } from '@vercel/analytics/react';
 
 // -----------------------------
 // Helpers
@@ -202,6 +203,7 @@ export default function DeadlineTrackerApp() {
   // UI
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-sky-950 to-indigo-950 text-white selection:bg-indigo-400/30">
+      <Analytics />
       <div className="max-w-3xl mx-auto px-4 py-10 md:py-14">
         <header className="mb-8 flex items-center justify-between">
           <div>
