@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dayjs from "dayjs";
 import { Calendar, Hourglass, RefreshCcw, Play } from "lucide-react";
@@ -122,18 +122,92 @@ function TimeBlock({ value, label }) {
 }
 
 // -----------------------------
+// Tracker Card
+// -----------------------------
+function TrackerCard({ tracker, now, mode, onDelete }) {
+  const { goal, startTime, deadline, quoteIndex, id } = tracker;
+  const totalMs = Math.max(1, deadline - startTime);
+  const elapsedMs = clamp(now - startTime, 0, totalMs);
+  const remainingMs = Math.max(0, deadline - now);
+  const percent = clamp((elapsedMs / totalMs) * 100, 0, 100);
+  const { days, hours, minutes, seconds } = msToDHMS(remainingMs);
+
+  return (
+    <motion.div
+      layout
+      className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xl flex flex-col"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold">{goal}</h2>
+        <button onClick={() => onDelete(id)} className="text-xs text-gray-500">
+          Remove
+        </button>
+      </div>
+
+      <div className="flex flex-col items-center gap-6">
+        <AnimatePresence mode="wait">
+          {mode === "circular" ? (
+            <motion.div
+              key="circular"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+            >
+              <CircularProgress percent={percent} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="bar"
+              className="w-full"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+            >
+              <GradientBar percent={percent} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="grid grid-cols-4 gap-3 w-full place-items-center">
+          <TimeBlock value={String(days)} label="Days" />
+          <TimeBlock value={pad2(hours)} label="Hours" />
+          <TimeBlock value={pad2(minutes)} label="Minutes" />
+          <TimeBlock value={pad2(seconds)} label="Seconds" />
+        </div>
+
+        <div className="w-full text-center text-sm text-gray-600">
+          {remainingMs === 0 ? (
+            <span>Time’s up! You reached your deadline.</span>
+          ) : (
+            <span>
+              {Math.round(percent)}% elapsed • Deadline: {new Date(deadline).toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        <motion.div
+          key={quoteIndex}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="mt-2 text-center text-sm text-gray-700"
+        >
+          “{QUOTES[quoteIndex]}”
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+// -----------------------------
 // Main App
 // -----------------------------
 export default function DeadlineTrackerApp() {
-  const [goal, setGoal] = useState("");
+  const [goalInput, setGoalInput] = useState("");
   const [deadlineInput, setDeadlineInput] = useState(""); // datetime-local string
-  const [startTime, setStartTime] = useState(null); // number (ms)
-  const [deadline, setDeadline] = useState(null); // number (ms)
+  const [trackers, setTrackers] = useState([]);
   const [now, setNow] = useState(Date.now());
   const [mode, setMode] = useState("circular"); // 'circular' | 'bar'
-  const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * QUOTES.length));
-
-  const tracking = startTime !== null && deadline !== null;
 
   // Load/Persist state
   useEffect(() => {
@@ -141,19 +215,16 @@ export default function DeadlineTrackerApp() {
     if (raw) {
       try {
         const s = JSON.parse(raw);
-        if (s.goal) setGoal(s.goal);
-        if (s.deadline) setDeadline(s.deadline);
-        if (s.startTime) setStartTime(s.startTime);
+        if (Array.isArray(s.trackers)) setTrackers(s.trackers);
         if (s.mode) setMode(s.mode);
-        if (typeof s.quoteIndex === "number") setQuoteIndex(s.quoteIndex);
       } catch {}
     }
   }, []);
 
   useEffect(() => {
-    const s = { goal, deadline, startTime, mode, quoteIndex };
+    const s = { trackers, mode };
     localStorage.setItem("deadline-tracker-state", JSON.stringify(s));
-  }, [goal, deadline, startTime, mode, quoteIndex]);
+  }, [trackers, mode]);
 
   // Ticker
   useEffect(() => {
@@ -161,23 +232,11 @@ export default function DeadlineTrackerApp() {
     return () => clearInterval(id);
   }, []);
 
-  // Derived times
-  const { totalMs, elapsedMs, remainingMs, percent } = useMemo(() => {
-    if (!tracking) return { totalMs: 0, elapsedMs: 0, remainingMs: 0, percent: 0 };
-    const t = Math.max(1, deadline - startTime);
-    const e = clamp(now - startTime, 0, t);
-    const r = Math.max(0, deadline - now);
-    const p = clamp((e / t) * 100, 0, 100);
-    return { totalMs: t, elapsedMs: e, remainingMs: r, percent: p };
-  }, [tracking, deadline, startTime, now]);
-
-  const { days, hours, minutes, seconds } = msToDHMS(remainingMs);
-
   // Handlers
-  function handleStart(e) {
+  function handleAddTracker(e) {
     e?.preventDefault?.();
     const d = dayjs(deadlineInput).valueOf();
-    if (!goal.trim()) {
+    if (!goalInput.trim()) {
       alert("Please enter a goal name.");
       return;
     }
@@ -189,15 +248,26 @@ export default function DeadlineTrackerApp() {
       alert("Deadline must be in the future.");
       return;
     }
-    setStartTime(Date.now());
-    setDeadline(d);
-    setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
+    const newTracker = {
+      id: Date.now(),
+      goal: goalInput.trim(),
+      startTime: Date.now(),
+      deadline: d,
+      quoteIndex: Math.floor(Math.random() * QUOTES.length),
+    };
+    setTrackers((t) => [...t, newTracker]);
+    setGoalInput("");
+    setDeadlineInput("");
   }
 
   function handleReset() {
-    setStartTime(null);
-    setDeadline(null);
+    setTrackers([]);
+    setGoalInput("");
     setDeadlineInput("");
+  }
+
+  function handleRemove(id) {
+    setTrackers((t) => t.filter((tr) => tr.id !== id));
   }
 
   // UI
@@ -224,13 +294,13 @@ export default function DeadlineTrackerApp() {
             className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xl"
           >
             <h2 className="font-bold mb-4 flex items-center gap-2"><Hourglass className="w-4 h-4"/> Set Your Goal</h2>
-            <form onSubmit={handleStart} className="space-y-4">
+            <form onSubmit={handleAddTracker} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wide text-gray-600">Goal Name</label>
                 <input
                   type="text"
-                  value={goal}
-                  onChange={(e) => setGoal(e.target.value)}
+                  value={goalInput}
+                  onChange={(e) => setGoalInput(e.target.value)}
                   placeholder="e.g., Launch my portfolio website"
                   className="w-full rounded-xl bg-gray-50 border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 placeholder:text-gray-400"
                 />
@@ -282,69 +352,27 @@ export default function DeadlineTrackerApp() {
             </div>
           </motion.div>
 
-          {/* Card: Dashboard */}
-          <motion.div
-            layout
-            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xl flex flex-col"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold">Progress Dashboard</h2>
-              <div className="text-xs text-gray-500">{tracking ? "Live" : "Idle"}</div>
-            </div>
-
-            <div className="flex flex-col items-center gap-6">
-              <AnimatePresence mode="wait">
-                {mode === "circular" ? (
-                  <motion.div key="circular" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}>
-                    <CircularProgress percent={percent} />
-                  </motion.div>
-                ) : (
-                  <motion.div key="bar" className="w-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}>
-                    <GradientBar percent={percent} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="text-center">
-                <div className="text-sm uppercase tracking-wide text-gray-500">Goal</div>
-                <div className="text-lg font-semibold">{goal || "—"}</div>
-              </div>
-
-              {/* Countdown */}
-              <div className="grid grid-cols-4 gap-3 w-full place-items-center">
-                <TimeBlock value={String(days)} label="Days" />
-                <TimeBlock value={pad2(hours)} label="Hours" />
-                <TimeBlock value={pad2(minutes)} label="Minutes" />
-                <TimeBlock value={pad2(seconds)} label="Seconds" />
-              </div>
-
-              {/* Meta */}
-              <div className="w-full text-center text-sm text-gray-600">
-                {tracking ? (
-                  remainingMs === 0 ? (
-                    <span>Time’s up! You reached your deadline.</span>
-                  ) : (
-                    <span>
-                      {Math.round(percent)}% elapsed • Deadline: {new Date(deadline).toLocaleString()}
-                    </span>
-                  )
-                ) : (
-                  <span>Set a goal and deadline to begin tracking.</span>
-                )}
-              </div>
-
-              {/* Quote */}
+          {/* Card(s): Dashboards */}
+          <div className="space-y-6">
+            {trackers.length === 0 ? (
               <motion.div
-                key={quoteIndex}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35 }}
-                className="mt-2 text-center text-sm text-gray-700"
+                layout
+                className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xl text-center text-sm text-gray-600"
               >
-                “{QUOTES[quoteIndex]}”
+                No trackers yet.
               </motion.div>
-            </div>
-          </motion.div>
+            ) : (
+              trackers.map((t) => (
+                <TrackerCard
+                  key={t.id}
+                  tracker={t}
+                  now={now}
+                  mode={mode}
+                  onDelete={handleRemove}
+                />
+              ))
+            )}
+          </div>
         </div>
 
         {/* Footer tips */}
