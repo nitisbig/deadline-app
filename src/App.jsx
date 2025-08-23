@@ -58,7 +58,7 @@ function CircularProgress({ percent }) {
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="rgba(255,255,255,0.12)"
+          stroke="rgba(0,0,0,0.1)"
           strokeWidth={stroke}
           fill="none"
         />
@@ -76,10 +76,10 @@ function CircularProgress({ percent }) {
         />
       </svg>
       <div className="absolute text-center">
-        <div className="text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">
+        <div className="text-4xl font-extrabold tracking-tight text-gray-900 drop-shadow-sm">
           {Math.round(percent)}%
         </div>
-        <div className="text-xs text-white/70">time elapsed</div>
+        <div className="text-xs text-gray-600">time elapsed</div>
       </div>
     </div>
   );
@@ -87,7 +87,7 @@ function CircularProgress({ percent }) {
 
 function GradientBar({ percent }) {
   return (
-    <div className="w-full h-5 rounded-2xl bg-white/10 overflow-hidden shadow-inner">
+    <div className="w-full h-5 rounded-2xl bg-gray-200 overflow-hidden shadow-inner">
       <motion.div
         className="h-full w-0"
         style={{
@@ -106,17 +106,17 @@ function GradientBar({ percent }) {
 // -----------------------------
 function TimeBlock({ value, label }) {
   return (
-    <div className="px-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 text-center min-w-[90px]">
+    <div className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-300 text-center min-w-[90px]">
       <motion.div
         key={value}
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 18 }}
-        className="text-4xl md:text-5xl font-black tracking-tight text-white"
+        className="text-4xl md:text-5xl font-black tracking-tight text-gray-900"
       >
         {value}
       </motion.div>
-      <div className="text-xs uppercase tracking-wide text-white/70">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-gray-600">{label}</div>
     </div>
   );
 }
@@ -202,15 +202,15 @@ export default function DeadlineTrackerApp() {
 
   // UI
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-sky-950 to-indigo-950 text-white selection:bg-indigo-400/30">
+    <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-sky-50 to-indigo-100 text-gray-900 selection:bg-indigo-300/30">
       <Analytics />
       <div className="max-w-3xl mx-auto px-4 py-10 md:py-14">
         <header className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight">Deadline Tracker</h1>
-            <p className="text-white/70 text-sm">Stay on track with a clear countdown & progress.</p>
+            <p className="text-gray-600 text-sm">Stay on track with a clear countdown & progress.</p>
           </div>
-          <div className="hidden md:flex items-center gap-2 text-white/60">
+          <div className="hidden md:flex items-center gap-2 text-gray-500">
             <Calendar className="w-5 h-5" />
             <span>{new Date().toLocaleDateString()}</span>
           </div>
@@ -221,28 +221,28 @@ export default function DeadlineTrackerApp() {
           {/* Card: Input Form */}
           <motion.div
             layout
-            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-xl"
+            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xl"
           >
             <h2 className="font-bold mb-4 flex items-center gap-2"><Hourglass className="w-4 h-4"/> Set Your Goal</h2>
             <form onSubmit={handleStart} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-wide text-white/70">Goal Name</label>
+                <label className="text-xs uppercase tracking-wide text-gray-600">Goal Name</label>
                 <input
                   type="text"
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   placeholder="e.g., Launch my portfolio website"
-                  className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-400/50 placeholder:text-white/40"
+                  className="w-full rounded-xl bg-gray-50 border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 placeholder:text-gray-400"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-wide text-white/70">Deadline (Date & Time)</label>
+                <label className="text-xs uppercase tracking-wide text-gray-600">Deadline (Date & Time)</label>
                 <input
                   type="datetime-local"
                   value={deadlineInput}
                   onChange={(e) => setDeadlineInput(e.target.value)}
                   min={new Date(Date.now() + 60_000).toISOString().slice(0,16)}
-                  className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-400/50"
+                  className="w-full rounded-xl bg-gray-50 border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -255,7 +255,7 @@ export default function DeadlineTrackerApp() {
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-3 bg-white/10 border border-white/10 hover:bg-white/15"
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-3 bg-gray-100 border border-gray-300 hover:bg-gray-200"
                 >
                   <RefreshCcw className="w-4 h-4"/> Reset
                 </button>
@@ -264,17 +264,17 @@ export default function DeadlineTrackerApp() {
 
             {/* Mode toggle */}
             <div className="mt-6">
-              <label className="text-xs uppercase tracking-wide text-white/70">Progress Style</label>
-              <div className="mt-2 inline-flex rounded-xl overflow-hidden border border-white/10 bg-white/10">
+              <label className="text-xs uppercase tracking-wide text-gray-600">Progress Style</label>
+              <div className="mt-2 inline-flex rounded-xl overflow-hidden border border-gray-300 bg-gray-100">
                 <button
                   onClick={() => setMode("circular")}
-                  className={`px-4 py-2 text-sm ${mode === "circular" ? "bg-white/20" : "bg-transparent"}`}
+                  className={`px-4 py-2 text-sm ${mode === "circular" ? "bg-white" : "bg-transparent"}`}
                 >
                   Circular
                 </button>
                 <button
                   onClick={() => setMode("bar")}
-                  className={`px-4 py-2 text-sm ${mode === "bar" ? "bg-white/20" : "bg-transparent"}`}
+                  className={`px-4 py-2 text-sm ${mode === "bar" ? "bg-white" : "bg-transparent"}`}
                 >
                   Gradient Bar
                 </button>
@@ -285,11 +285,11 @@ export default function DeadlineTrackerApp() {
           {/* Card: Dashboard */}
           <motion.div
             layout
-            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-xl flex flex-col"
+            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xl flex flex-col"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold">Progress Dashboard</h2>
-              <div className="text-xs text-white/60">{tracking ? "Live" : "Idle"}</div>
+              <div className="text-xs text-gray-500">{tracking ? "Live" : "Idle"}</div>
             </div>
 
             <div className="flex flex-col items-center gap-6">
@@ -306,7 +306,7 @@ export default function DeadlineTrackerApp() {
               </AnimatePresence>
 
               <div className="text-center">
-                <div className="text-sm uppercase tracking-wide text-white/60">Goal</div>
+                <div className="text-sm uppercase tracking-wide text-gray-500">Goal</div>
                 <div className="text-lg font-semibold">{goal || "—"}</div>
               </div>
 
@@ -319,7 +319,7 @@ export default function DeadlineTrackerApp() {
               </div>
 
               {/* Meta */}
-              <div className="w-full text-center text-sm text-white/70">
+              <div className="w-full text-center text-sm text-gray-600">
                 {tracking ? (
                   remainingMs === 0 ? (
                     <span>Time’s up! You reached your deadline.</span>
@@ -339,7 +339,7 @@ export default function DeadlineTrackerApp() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35 }}
-                className="mt-2 text-center text-sm text-white/80"
+                className="mt-2 text-center text-sm text-gray-700"
               >
                 “{QUOTES[quoteIndex]}”
               </motion.div>
@@ -348,7 +348,7 @@ export default function DeadlineTrackerApp() {
         </div>
 
         {/* Footer tips */}
-        <div className="mt-8 text-center text-xs text-white/50">
+        <div className="mt-8 text-center text-xs text-gray-500">
           Pro tip: keep this tab open—your countdown updates every second.
         </div>
       </div>
